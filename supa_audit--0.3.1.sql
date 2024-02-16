@@ -56,9 +56,6 @@ create table audit.record_version(
     check (op in ('UPDATE', 'DELETE') = (old_record is not null))
 );
 
--- mark the table as configuration data so it's included in database dumps and can be backed up
-select pg_catalog.pg_extension_config_dump('audit.record_version', '');
-select pg_catalog.pg_extension_config_dump('audit.record_version_id_seq', '');
 
 do $$
     begin
@@ -234,6 +231,7 @@ declare
             after insert or update or delete
             on %s
             for each row
+            when (auth.uid() is not null)
             execute procedure audit.insert_update_delete_trigger();',
         $1
     );
@@ -243,6 +241,7 @@ declare
             after truncate
             on %s
             for each statement
+            when (auth.uid() is not null)
             execute procedure audit.truncate_trigger();',
         $1
     );
